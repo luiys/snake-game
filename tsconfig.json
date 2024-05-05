@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "target": "ES2023",
+        "lib": ["es2018", "ES2017.String", "ES2017.Object", "dom"],
+        "strict": true, // Certifique-se de que o modo estrito está ativado
+        "esModuleInterop": true, // Ative a interoperabilidade com ES Modules
+    },
+    "exclude": [
+        "node_modules"
+    ],
+    "include": ["*.ts"]
+}
