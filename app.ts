@@ -19,7 +19,6 @@ function criarTamanhoDoMapa(numeroDeCelulas: number) {
         const leftBorder = i * cellsPerRowAndColumns
         border.left.push(leftBorder)
         border.right.push(leftBorder + (cellsPerRowAndColumns - 1))
-        // if (i >= 1 && i < (cellsPerRowAndColumns - 1)) border.right.push(leftBorder + (cellsPerRowAndColumns - 1))
         border.bottom.push(i + (cellsPerRowAndColumns * (cellsPerRowAndColumns - 1)))
     }
 
@@ -58,30 +57,19 @@ let lastMove: string[] = []
 function move(event: any) {
 
     let nextIndex
-    if (!deadScreen || !box) throw new Error("");
 
     if (event.key === 'a' || event.key === 'A') {
 
-        if ((border.left).includes(currentHeadCellIndex)) {
-            box.style.display = 'none'
-            deadScreen.style.display = 'flex'
-            clearInterval(loop)
-            return
-        }
-
+        if ((border.left).includes(currentHeadCellIndex)) return showDeadScreen()
         nextIndex = currentHeadCellIndex - 1
+
     }
 
     if (event.key === 'd' || event.key === 'D') {
 
-        if ((border.right).includes(currentHeadCellIndex)) {
-            box.style.display = 'none'
-            deadScreen.style.display = 'flex'
-            clearInterval(loop)
-            return
-        }
-
+        if ((border.right).includes(currentHeadCellIndex)) return showDeadScreen()
         nextIndex = currentHeadCellIndex + 1
+
     }
 
     if (event.key === 'w' || event.key === 'W') nextIndex = currentHeadCellIndex - cellsPerRowAndColumns
@@ -90,14 +78,9 @@ function move(event: any) {
     if (!nextIndex && nextIndex !== 0) throw new Error("Próxima celula inválida");
 
     const nextCell = document.getElementById(nextIndex.toString())
-    if (!nextCell) {
-        box.style.display = 'none'
-        deadScreen.style.display = 'flex'
-        clearInterval(loop)
-        return
-    }
+    if (!nextCell) return showDeadScreen()
 
-    // if(isSnakeDead(nextIndex)) return
+    if (bodyPositions.includes(nextIndex)) return showDeadScreen()
 
     if (nextIndex === foodCellIndex) eat()
 
@@ -209,21 +192,12 @@ function eat() {
 
 }
 
-function isSnakeDead(nextMove: number) {
+function showDeadScreen() {
 
+    if (!deadScreen || !box) throw new Error("Erro de UI");
 
-
-    for (const column in border) {
-
-        if ((((border as any)[column]) as number[]).includes(nextMove)) {
-            box.style.display = 'none'
-            deadScreen.style.display = 'flex'
-            clearInterval(loop)
-            return true
-        }
-
-    }
-
-    return false
+    box.style.display = 'none'
+    deadScreen.style.display = 'flex'
+    clearInterval(loop)
 
 }
