@@ -233,7 +233,7 @@ function restart() {
     }
 
     score = 0
-    scoreSpan.innerHTML = String(0)
+    scoreSpan.innerHTML = String(score)
 
     foodCellIndex = 5
     paintFoodFirstTime()
