@@ -223,7 +223,7 @@ function showDeadScreen() {
 
 function restart() {
 
-    if (!deadScreen || !box) throw new Error("Erro de UI");
+    if (!deadScreen || !box || !scoreSpan) throw new Error("Erro de UI");
 
     for (let index = 0; index < totalNumberOfCells; index++) {
 
@@ -231,6 +231,9 @@ function restart() {
         cell.style.backgroundColor = 'red'
 
     }
+
+    score = 0
+    scoreSpan.innerHTML = String(0)
 
     foodCellIndex = 5
     paintFoodFirstTime()
