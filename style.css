@@ -51,6 +51,7 @@ body {
     border-radius: 6px;
     overflow: hidden;
     z-index: 1;
+    cursor: pointer;
 }
 
 .restart span {
