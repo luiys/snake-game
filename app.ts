@@ -2,6 +2,10 @@ const box = document.getElementById('box')
 if (!box) throw new Error("Box não encontrada");
 
 const deadScreen = document.getElementById('dead')
+const buttonRestart = document.getElementById('restart')
+
+if (!buttonRestart) throw new Error("Botão não encontrado");
+buttonRestart.onclick = restart
 
 //225
 const numeroInicialDeCelulas = 225
@@ -22,8 +26,6 @@ function criarTamanhoDoMapa(numeroDeCelulas: number) {
         border.bottom.push(i + (cellsPerRowAndColumns * (cellsPerRowAndColumns - 1)))
     }
 
-    console.log(border)
-
     return { cellsPerRowAndColumns, totalNumberOfCells }
 
 }
@@ -35,22 +37,27 @@ for (let index = 0; index < totalNumberOfCells; index++) {
 
     const cell = <HTMLDivElement>(document.createElement('div'));
     cell.className = 'cell'
-    cell.innerHTML = String(index)
+    // cell.innerHTML = String(index)
     cell.id = index.toString()
     box.appendChild(cell)
 
 }
 
 let currentHeadCellIndex = 1
-const bodyPositions = [1, 0]
+let bodyPositions = [1, 0]
 
-bodyPositions.forEach(x => {
+function paintSnakeFirstTime() {
 
-    const cell = document.getElementById(x.toString())
-    if (!cell) throw new Error("Celula de inicio não encontrada");
-    cell.style.backgroundColor = '#000000'
+    bodyPositions.forEach((x, idx) => {
 
-})
+        const cell = document.getElementById(x.toString())
+        if (!cell) throw new Error("Celula de inicio não encontrada");
+        if (idx === 0) cell.style.backgroundColor = '#000000'
+        if (idx !== 0) cell.style.backgroundColor = 'rgb(4, 153, 255)'
+
+    })
+
+}
 
 let lastMove: string[] = []
 
@@ -127,17 +134,28 @@ document.addEventListener('keydown', (e) => {
     lastMove.push(keyPressed)
 });
 
-let loop = setInterval(() => {
+let loop: NodeJS.Timeout
 
-    if (lastMove.length > 1) move({ key: lastMove.shift() })
-    else if (lastMove.length === 1) move({ key: lastMove[0] })
+function start(tick: number) {
 
-}, 200)
+    loop = setInterval(() => {
+
+        if (lastMove.length > 1) move({ key: lastMove.shift() })
+        else if (lastMove.length === 1) move({ key: lastMove[0] })
+
+    }, tick)
+
+}
 
 let foodCellIndex: number = 5
-const startFoodCell = document.getElementById((foodCellIndex).toString())
-if (!startFoodCell) throw new Error("Celula de comida não encontrada");
-startFoodCell.style.backgroundColor = '#00FF00'
+
+function paintFoodFirstTime() {
+
+    const startFoodCell = document.getElementById((foodCellIndex).toString())
+    if (!startFoodCell) throw new Error("Celula de comida não encontrada");
+    startFoodCell.style.backgroundColor = '#00FF00'
+
+}
 
 function generateFood() {
 
@@ -198,6 +216,35 @@ function showDeadScreen() {
 
     box.style.display = 'none'
     deadScreen.style.display = 'flex'
+    lastMove = []
     clearInterval(loop)
 
 }
+
+function restart() {
+
+    if (!deadScreen || !box) throw new Error("Erro de UI");
+
+    for (let index = 0; index < totalNumberOfCells; index++) {
+
+        const cell = <HTMLDivElement>(document.getElementById(index.toString()));
+        cell.style.backgroundColor = 'red'
+
+    }
+
+    foodCellIndex = 5
+    paintFoodFirstTime()
+
+    currentHeadCellIndex = 1
+    bodyPositions = [1, 0]
+    paintSnakeFirstTime()
+
+    start(200)
+
+    box.style.display = 'grid'
+    deadScreen.style.display = 'none'
+}
+
+paintFoodFirstTime()
+paintSnakeFirstTime()
+start(200)
