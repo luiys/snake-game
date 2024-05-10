@@ -1,26 +1,42 @@
 const box = document.getElementById('box')
 if (!box) throw new Error("Box não encontrada");
 
+const deadScreen = document.getElementById('dead')
+
 //225
 const numeroInicialDeCelulas = 225
 
+const border = { top: [0], left: [0] as number[], right: [] as number[], bottom: [] as number[] }
 function criarTamanhoDoMapa(numeroDeCelulas: number) {
 
     const raiz = Math.sqrt(numeroDeCelulas);
-    const numeroDeColunasAndLinhas = Math.floor(raiz);
-    return { numeroDeColunasAndLinhas, realNumeroPossivelDeCelulas: numeroDeColunasAndLinhas * numeroDeColunasAndLinhas }
+    const cellsPerRowAndColumns = Math.floor(raiz);
+    const totalNumberOfCells = cellsPerRowAndColumns * cellsPerRowAndColumns
+
+    border.right.push(cellsPerRowAndColumns - 1)
+    for (let i = 1; i < cellsPerRowAndColumns; i++) {
+        border.top.push(i)
+        const leftBorder = i * cellsPerRowAndColumns
+        border.left.push(leftBorder)
+        border.right.push(leftBorder + (cellsPerRowAndColumns - 1))
+        // if (i >= 1 && i < (cellsPerRowAndColumns - 1)) border.right.push(leftBorder + (cellsPerRowAndColumns - 1))
+        border.bottom.push(i + (cellsPerRowAndColumns * (cellsPerRowAndColumns - 1)))
+    }
+
+    console.log(border)
+
+    return { cellsPerRowAndColumns, totalNumberOfCells }
 
 }
 
+const { cellsPerRowAndColumns, totalNumberOfCells } = criarTamanhoDoMapa(numeroInicialDeCelulas)
+box.style.gridTemplateColumns = box.style.gridTemplateRows = `repeat(${cellsPerRowAndColumns}, 1fr)`
 
-const { numeroDeColunasAndLinhas, realNumeroPossivelDeCelulas: realNumberOfPossibleCells } = criarTamanhoDoMapa(numeroInicialDeCelulas)
-box.style.gridTemplateColumns = box.style.gridTemplateRows = `repeat(${numeroDeColunasAndLinhas}, 1fr)`
-
-for (let index = 0; index < realNumberOfPossibleCells; index++) {
+for (let index = 0; index < totalNumberOfCells; index++) {
 
     const cell = <HTMLDivElement>(document.createElement('div'));
     cell.className = 'cell'
-    // cell.innerHTML = String(index)
+    cell.innerHTML = String(index)
     cell.id = index.toString()
     box.appendChild(cell)
 
@@ -31,7 +47,7 @@ const bodyPositions = [1, 0]
 
 bodyPositions.forEach(x => {
 
-    const cell = document.getElementById((x).toString())
+    const cell = document.getElementById(x.toString())
     if (!cell) throw new Error("Celula de inicio não encontrada");
     cell.style.backgroundColor = '#000000'
 
@@ -42,19 +58,46 @@ let lastMove: string[] = []
 function move(event: any) {
 
     let nextIndex
+    if (!deadScreen || !box) throw new Error("");
 
-    if (event.key === 'a' || event.key === 'A') nextIndex = currentHeadCellIndex - 1
-    if (event.key === 'w' || event.key === 'W') nextIndex = currentHeadCellIndex - numeroDeColunasAndLinhas
-    if (event.key === 's' || event.key === 'S') nextIndex = currentHeadCellIndex + numeroDeColunasAndLinhas
-    if (event.key === 'd' || event.key === 'D') nextIndex = currentHeadCellIndex + 1
+    if (event.key === 'a' || event.key === 'A') {
+
+        if ((border.left).includes(currentHeadCellIndex)) {
+            box.style.display = 'none'
+            deadScreen.style.display = 'flex'
+            clearInterval(loop)
+            return
+        }
+
+        nextIndex = currentHeadCellIndex - 1
+    }
+
+    if (event.key === 'd' || event.key === 'D') {
+
+        if ((border.right).includes(currentHeadCellIndex)) {
+            box.style.display = 'none'
+            deadScreen.style.display = 'flex'
+            clearInterval(loop)
+            return
+        }
+
+        nextIndex = currentHeadCellIndex + 1
+    }
+
+    if (event.key === 'w' || event.key === 'W') nextIndex = currentHeadCellIndex - cellsPerRowAndColumns
+    if (event.key === 's' || event.key === 'S') nextIndex = currentHeadCellIndex + cellsPerRowAndColumns
 
     if (!nextIndex && nextIndex !== 0) throw new Error("Próxima celula inválida");
 
-    const nextCell = document.getElementById((nextIndex).toString())
+    const nextCell = document.getElementById(nextIndex.toString())
     if (!nextCell) {
-        // clearInterval(loop)
-        throw new Error("Próxima celula não encontrada");
+        box.style.display = 'none'
+        deadScreen.style.display = 'flex'
+        clearInterval(loop)
+        return
     }
+
+    // if(isSnakeDead(nextIndex)) return
 
     if (nextIndex === foodCellIndex) eat()
 
@@ -101,7 +144,6 @@ document.addEventListener('keydown', (e) => {
     lastMove.push(keyPressed)
 });
 
-
 let loop = setInterval(() => {
 
     if (lastMove.length > 1) move({ key: lastMove.shift() })
@@ -116,7 +158,7 @@ startFoodCell.style.backgroundColor = '#00FF00'
 
 function generateFood() {
 
-    const randomCell = Math.floor(Math.random() * ((realNumberOfPossibleCells - 1) - 0 + 1)) + 0;
+    const randomCell = Math.floor(Math.random() * ((totalNumberOfCells - 1) - 0 + 1)) + 0;
 
     if (bodyPositions.includes(randomCell)) {
         generateFood()
@@ -141,25 +183,21 @@ function eat() {
 
     let newLastBodyCellPosition = 0
     if (lastMove[0] === 'a') newLastBodyCellPosition = lastBodyCellPosition + 1
-    if (lastMove[0] === 'w') newLastBodyCellPosition = lastBodyCellPosition + numeroDeColunasAndLinhas
-    if (lastMove[0] === 's') newLastBodyCellPosition = lastBodyCellPosition - numeroDeColunasAndLinhas
+    if (lastMove[0] === 'w') newLastBodyCellPosition = lastBodyCellPosition + cellsPerRowAndColumns
+    if (lastMove[0] === 's') newLastBodyCellPosition = lastBodyCellPosition - cellsPerRowAndColumns
     if (lastMove[0] === 'd') newLastBodyCellPosition = lastBodyCellPosition - 1
 
+    const offsets = [1, cellsPerRowAndColumns, -cellsPerRowAndColumns, -1];
     do {
 
-        newLastBodyCellPosition = lastBodyCellPosition + 1
-        if (newLastBodyCellPosition >= 0 || newLastBodyCellPosition <= realNumberOfPossibleCells - 1) break;
+        for (const offset of offsets) {
 
-        newLastBodyCellPosition = lastBodyCellPosition + numeroDeColunasAndLinhas
-        if (newLastBodyCellPosition >= 0 || newLastBodyCellPosition <= realNumberOfPossibleCells - 1) break;
+            newLastBodyCellPosition = lastBodyCellPosition + offset;
+            if (newLastBodyCellPosition >= 0 && newLastBodyCellPosition < totalNumberOfCells) break
 
-        newLastBodyCellPosition = lastBodyCellPosition - numeroDeColunasAndLinhas
-        if (newLastBodyCellPosition >= 0 || newLastBodyCellPosition <= realNumberOfPossibleCells - 1) break;
+        }
 
-        newLastBodyCellPosition = lastBodyCellPosition - 1
-        if (newLastBodyCellPosition >= 0 || newLastBodyCellPosition <= realNumberOfPossibleCells - 1) break;
-
-    } while (newLastBodyCellPosition < 0 || newLastBodyCellPosition > realNumberOfPossibleCells - 1)
+    } while (newLastBodyCellPosition < 0 || newLastBodyCellPosition > totalNumberOfCells - 1)
 
     bodyPositions.push(newLastBodyCellPosition)
 
@@ -168,5 +206,24 @@ function eat() {
     score += 1
     if (!scoreSpan) throw new Error("Score não encontrado");
     scoreSpan.innerHTML = score.toString()
+
+}
+
+function isSnakeDead(nextMove: number) {
+
+
+
+    for (const column in border) {
+
+        if ((((border as any)[column]) as number[]).includes(nextMove)) {
+            box.style.display = 'none'
+            deadScreen.style.display = 'flex'
+            clearInterval(loop)
+            return true
+        }
+
+    }
+
+    return false
 
 }
